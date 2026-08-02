@@ -12,11 +12,9 @@ Automated MPD and ImmersionPod setup utility for audio language immersion.
 
 ---
 
-## 📦 Installation
+## 📦 Quick Start
 
-> ℹ️ **Note**: AUR submission (`yay -S immersionpod-git`) is currently pending due to temporary AUR maintenance. Please use the one-liner installer below in the meantime.
-
-### Manual / One-Liner
+Run this one-liner in your terminal:
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/Praveensenpai/immersionpod/main/install.sh | bash
