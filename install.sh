@@ -1,53 +1,68 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+# ImmersionPod & MPD Language Immersion Setup Utility
 
 CYAN='\033[0;36m'
-GREEN='\033[0;32m'
-PURPLE='\033[0;35m'
-BLUE='\033[0;34m'
+GREEN='\033[1;32m'
+PURPLE='\033[1;35m'
 YELLOW='\033[1;33m'
-RED='\033[0;31m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-echo -e "${PURPLE}🚀 Installing immersionpod setup script...${NC}\n"
+echo -e "${PURPLE}${BOLD}"
+echo "🌸 ========================================= 🌸"
+echo "        Setting up ImmersionPod & MPD...      "
+echo "🌸 ========================================= 🌸"
+echo -e "${NC}"
 
-BIN_DIR="$HOME/.local/bin"
-mkdir -p "$BIN_DIR"
-
-RAW_URL="https://raw.githubusercontent.com/Praveensenpai/immersionpod/main/bin/impd-setup"
-
-LOCAL_DIR=""
-if [ -n "${BASH_SOURCE[0]}" ] && [ -f "${BASH_SOURCE[0]}" ]; then
-    LOCAL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+if command -v pacman &>/dev/null; then
+    echo -e "${CYAN}▶ Installing mpd, mpc, and ffmpeg...${NC}"
+    sudo pacman -S --needed --noconfirm mpd mpc ffmpeg 2>/dev/null || true
 fi
 
-if [ -n "$LOCAL_DIR" ] && [ -f "$LOCAL_DIR/PKGBUILD" ] && [ -f "$LOCAL_DIR/bin/impd-setup" ]; then
-    cp "$LOCAL_DIR/bin/impd-setup" "$BIN_DIR/impd-setup"
+if ! command -v impd &>/dev/null; then
+    echo -e "${CYAN}▶ Downloading impd directly...${NC}"
+    sudo curl -sL https://raw.githubusercontent.com/Ajatt-Tools/impd/master/impd -o /usr/local/bin/impd
+    sudo chmod +x /usr/local/bin/impd
+    echo -e "${GREEN}✔ Installed impd to /usr/local/bin/impd${NC}"
 else
-    echo -e "${BLUE}📦 Downloading impd-setup binary from GitHub...${NC}"
-    curl -sSL -H 'Cache-Control: no-cache' "$RAW_URL" -o "$BIN_DIR/impd-setup"
+    echo -e "${GREEN}✔ impd is already installed${NC}"
 fi
 
-if [ ! -f "$BIN_DIR/impd-setup" ] || [ ! -s "$BIN_DIR/impd-setup" ]; then
-    echo -e "${RED}❌ Error: Failed to download impd-setup binary!${NC}"
-    exit 1
+echo -e "${CYAN}▶ Creating directories...${NC}"
+mkdir -p "$HOME/Music/immersionpod"
+mkdir -p "$HOME/Videos/Anime"
+mkdir -p "$HOME/.config/mpd/playlists"
+mkdir -p "$HOME/.config/immersionpod"
+
+MPD_CONF="$HOME/.config/mpd/mpd.conf"
+if [ ! -f "$MPD_CONF" ]; then
+    echo -e "${CYAN}▶ Configuring mpd (${YELLOW}$MPD_CONF${CYAN})...${NC}"
+    cat << 'EOF' > "$MPD_CONF"
+music_directory    "~/Music/immersionpod"
+playlist_directory "~/.config/mpd/playlists"
+db_file            "~/.config/mpd/database"
+
+audio_output {
+    type    "pipewire"
+    name    "PipeWire Sound Server"
+}
+EOF
+else
+    echo -e "${GREEN}✔ mpd config already exists at $MPD_CONF${NC}"
 fi
 
-chmod +x "$BIN_DIR/impd-setup"
-echo -e "${GREEN}✔ Installed impd-setup to ${BIN_DIR}/impd-setup${NC}"
+IMPD_CONF="$HOME/.config/immersionpod/config"
+echo -e "${CYAN}▶ Configuring immersionpod (${YELLOW}$IMPD_CONF${CYAN})...${NC}"
+echo 'video_dir=~/Videos/Anime' > "$IMPD_CONF"
 
-SHELL_CONFIGS=("$HOME/.bashrc" "$HOME/.zshrc")
-ALIAS_LINE="alias impd-setup='$HOME/.local/bin/impd-setup'"
+if command -v systemctl &>/dev/null; then
+    echo -e "${CYAN}▶ Enabling and starting mpd service...${NC}"
+    systemctl --user enable --now mpd 2>/dev/null || true
+fi
 
-for config in "${SHELL_CONFIGS[@]}"; do
-    if [ -f "$config" ]; then
-        if ! grep -q "alias impd-setup=" "$config" 2>/dev/null; then
-            echo "" >> "$config"
-            echo "$ALIAS_LINE" >> "$config"
-            echo -e "${BLUE}📝 Added impd-setup alias to $config${NC}"
-        fi
-    fi
-done
-
-echo -e "\n${GREEN}${BOLD}▶ Running ImmersionPod setup...${NC}"
-"$BIN_DIR/impd-setup"
+echo -e "\n${PURPLE}${BOLD}"
+echo "✨ ========================================= ✨"
+echo "      ImmersionPod setup complete! 🎉        "
+echo "✨ ========================================= ✨"
+echo -e "${NC}"
